@@ -61,8 +61,9 @@ Both tools update (or print) the `github.copilot.chat.customOAIModels` block. A 
 - `url` should point to **where Copilot should send OpenAI-style requests**:
   - either directly to LM Studio (e.g. `http://localhost:1234/v1`), or
   - to the proxy (`http://localhost:3000/v1`) if you enable it.
-- `toolCalling` and `vision` are auto-detected from LM Studio’s model capabilities.
-- `maxInputTokens` / `maxOutputTokens` come from the model’s reported context length.
+- `toolCalling` is auto-detected from the model's capabilities array.
+- `vision` is auto-detected from the model type (true for VLM models).
+- `maxInputTokens` / `maxOutputTokens` come from the model's reported context length.
 
 ---
 

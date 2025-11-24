@@ -20,14 +20,14 @@ Features:
 - JSONC format support (handles comments and trailing commas)
 
 Usage:
-    # Install dependencies and run with uv (recommended)
-    uv run generate-custom-oai-models.py --help
-    
-    # Or install manually and run with python
-    pip install requests click json5
-    python generate-custom-oai-models.py --help
+    # Run with uvx (no install required)
+    uvx --from git+https://github.com/alessandrobologna/copilot-lmstudio-config copilot-lmstudio-config --help
 
-gist: https://github.com/your-username/lm-studio-copilot-config
+    # Or install and run
+    pip install git+https://github.com/alessandrobologna/copilot-lmstudio-config
+    copilot-lmstudio-config --help
+
+Repository: https://github.com/alessandrobologna/copilot-lmstudio-config
 Author: Alessandro Bologna
 License: MIT
 """
@@ -138,7 +138,7 @@ def generate_copilot_config(api_base, openai_url):
             "name": model_id,
             "url": openai_url,
             "toolCalling": "tool_use" in capabilities,
-            "vision": "vision" in capabilities,  # Check for vision capability
+            "vision": model.get("type") == "vlm",  # VLM = Vision Language Model
             "thinking": True,  # Default to True, can be customized per model
             "maxInputTokens": max_context,
             "maxOutputTokens": max_context,
@@ -170,7 +170,7 @@ def update_settings_file(settings_path, config):
 
         except Exception as e:
             # If parsing fails, create a minimal settings structure
-            print(f"⚠️  Could not parse existing settings ({e}), creating new structure...")
+            print(f"Warning: Could not parse existing settings ({e}), creating new structure...")
             settings = {}
     else:
         settings = {}
@@ -190,7 +190,7 @@ def update_settings_file(settings_path, config):
         # Nothing to do, leave file and backups untouched.
         return
     if decision == 'cancel':
-        print("❌ Operation cancelled by user")
+        print("Operation cancelled by user")
         sys.exit(0)
 
     # Create dated backup before modifying, e.g. settings.250924-0.backup.json
@@ -209,13 +209,13 @@ def update_settings_file(settings_path, config):
             index += 1
 
         shutil.copy2(settings_file, backup_path)
-        print(f"📋 Created backup at {backup_path}")
+        print(f"Created backup at {backup_path}")
 
     # Write back to file (as regular JSON with proper formatting)
     with open(settings_file, 'w', encoding='utf-8') as f:
         f.write(new_content)
 
-    print(f"✅ Updated {settings_file} with {len(config)} models")
+    print(f"Successfully updated {settings_file} with {len(config)} models")
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
@@ -254,26 +254,29 @@ def main(base_url, lmstudio_url, settings, settings_path):
     
     \b
     EXAMPLES:
-    
+
     # Generate config and print to stdout (copy/paste into VS Code settings)
-    uv run generate-custom-oai-models.py
-    
+    uvx --from git+https://github.com/alessandrobologna/copilot-lmstudio-config copilot-lmstudio-config
+
     # Use custom proxy + LM Studio URLs
-    uv run generate-custom-oai-models.py \\
+    copilot-lmstudio-config \\
         --base-url http://studio.local:3000/v1 \\
         --lmstudio-url http://studio.local:1234
-    
-    # Update VS Code settings file directly (macOS)
-    uv run generate-custom-oai-models.py --settings-path "~/Library/Application Support/Code/User/settings.json"
-    
-    # Update VS Code Insiders settings (macOS)  
-    uv run generate-custom-oai-models.py --settings-path "~/Library/Application Support/Code - Insiders/User/settings.json"
-    
+
+    # Auto-detect and update VS Code settings (macOS)
+    copilot-lmstudio-config --settings code
+
+    # Auto-detect and update VS Code Insiders settings
+    copilot-lmstudio-config --settings code-insiders
+
+    # Or specify custom settings path (macOS)
+    copilot-lmstudio-config --settings-path "~/Library/Application Support/Code/User/settings.json"
+
     # Windows VS Code settings
-    uv run generate-custom-oai-models.py --settings-path "%APPDATA%/Code/User/settings.json"
-    
+    copilot-lmstudio-config --settings-path "%APPDATA%/Code/User/settings.json"
+
     # Linux VS Code settings
-    uv run generate-custom-oai-models.py --settings-path "~/.config/Code/User/settings.json"
+    copilot-lmstudio-config --settings-path "~/.config/Code/User/settings.json"
     
     \b
     SETUP:
@@ -282,9 +285,9 @@ def main(base_url, lmstudio_url, settings, settings_path):
     3. Restart VS Code to pick up the new models
     4. Access your local models via GitHub Copilot chat model selector
     
-    The script automatically detects tool calling capabilities, context lengths, and filters
-    out non-LLM models (like embeddings). All models are configured with thinking=true
-    and vision=false by default (adjust manually if needed).
+    The script automatically detects tool calling capabilities, vision capabilities (via model type),
+    context lengths, and filters out non-LLM models (like embeddings). All models are configured
+    with thinking=true by default, while vision and toolCalling are auto-detected (adjust manually if needed).
     """
     
     # Validate options
@@ -333,12 +336,22 @@ def main(base_url, lmstudio_url, settings, settings_path):
             output = {"github.copilot.chat.customOAIModels": config}
             print(json.dumps(output, indent=2))
             
+    except requests.exceptions.ConnectionError as e:
+        target = lmstudio_url or lmstudio_base
+        click.echo(f"\nError: Could not connect to LM Studio at {target}", err=True)
+        click.echo("\nPlease ensure:", err=True)
+        click.echo("  1. LM Studio is running", err=True)
+        click.echo("  2. Local server is started in LM Studio", err=True)
+        click.echo(f"  3. Server is listening on the correct port", err=True)
+        click.echo(f"\nIf LM Studio is running on a different port, use:", err=True)
+        click.echo(f"  --lmstudio-url http://localhost:PORT", err=True)
+        exit(1)
     except requests.exceptions.RequestException as e:
         target = lmstudio_url or lmstudio_base
-        click.echo(f"❌ Error connecting to LM Studio API at {target}: {e}", err=True)
+        click.echo(f"\nError connecting to LM Studio API at {target}: {e}", err=True)
         exit(1)
     except Exception as e:
-        click.echo(f"❌ Error: {e}", err=True)
+        click.echo(f"\nError: {e}", err=True)
         exit(1)
 
 

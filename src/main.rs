@@ -262,7 +262,23 @@ async fn generate_config(args: GenerateConfigArgs) -> Result<(), Box<dyn std::er
     // Fetch models from LM Studio
     let models_url = format!("{}/api/v0/models", lmstudio_url.trim_end_matches('/'));
     let client = reqwest::Client::new();
-    let response = client.get(&models_url).send().await?;
+    let response = match client.get(&models_url).send().await {
+        Ok(resp) => resp,
+        Err(e) => {
+            if e.is_connect() {
+                eprintln!("\nError: Could not connect to LM Studio at {}", lmstudio_url);
+                eprintln!("\nPlease ensure:");
+                eprintln!("  1. LM Studio is running");
+                eprintln!("  2. Local server is started in LM Studio");
+                eprintln!("  3. Server is listening on the correct port");
+                eprintln!("\nIf LM Studio is running on a different port, use:");
+                eprintln!("  --lmstudio-url http://localhost:PORT");
+                std::process::exit(1);
+            } else {
+                return Err(format!("Error sending request to {}: {}", models_url, e).into());
+            }
+        }
+    };
 
     if !response.status().is_success() {
         return Err(format!(
@@ -295,8 +311,8 @@ async fn generate_config(args: GenerateConfigArgs) -> Result<(), Box<dyn std::er
             tool_calling: capabilities
                 .map(|caps| caps.contains(&"tool_use".to_string()))
                 .unwrap_or(false),
-            vision: capabilities
-                .map(|caps| caps.contains(&"vision".to_string()))
+            vision: model.model_type.as_ref()
+                .map(|t| t == "vlm")
                 .unwrap_or(false),
             thinking: true,
             max_input_tokens: max_context,
