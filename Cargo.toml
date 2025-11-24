@@ -1,5 +1,5 @@
 [package]
-name = "copilot-lmstudio-proxy"
+name = "copilot-lmstudio-config"
 version = "0.1.0"
 edition = "2024"
 
@@ -20,6 +20,11 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 http-body-util = "0.1"
 clap = { version = "4.5", features = ["derive"] }
+json5 = "0.4"
+shellexpand = "3.1"
+similar = { version = "2.6", features = ["inline"] }
+dirs = "6.0"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 
 [profile.release]
 opt-level = "z"     # Optimize for size
