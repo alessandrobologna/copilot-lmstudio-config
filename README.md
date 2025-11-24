@@ -6,12 +6,17 @@ Generate GitHub Copilot "Custom OpenAI models" configuration for LM Studio, plus
 
 ## Quick Start (VS Code)
 
-Most users simply want Copilot to communicate with LM Studio, but Copilot lacks a built‑in way to enumerate the available models and requires manual configuration for each one.
+Most users simply want Copilot to communicate with LM Studio to run open weight models, but Copilot lacks a built-in way to enumerate the available models and requires manual configuration for each one.
 Both the python package and rust package allow you to query the `v0` LM Studio API and to update the VS Code configuration, adding an entry `github.copilot.chat.customOAIModels {}` to it.
 
-With the rust packge, clone the repo, then build the binary:
+With the rust package, clone the repo, then build and run:
   ```bash
+  # Config generation is the default - these are equivalent:
+  cargo run -- --help
   cargo run -- generate-config --help
+
+  # To run the proxy server:
+  cargo run -- serve --help
   ```
 
 With the python package, you can use `uvx` with no install:
@@ -88,28 +93,32 @@ Recommended approach:
 
 The proxy is a small Axum HTTP server that sits between Copilot and LM Studio and fixes known protocol mismatches on the fly.
 
-### Build
+### Build & Run
 
 ```bash
-# Debug build
-cargo build
-
-# Release build (optimized, single binary)
+# Build
 cargo build --release
+
+# Run the proxy server
+cargo run -- serve
+# Or with custom options:
+cargo run -- serve --port 3000 --lmstudio-url http://localhost:1234
 ```
 
 The release binary will be at `target/release/copilot-lmstudio-config`.
 
-### Run
+**Note:** Config generation is now the default command. Use `serve` subcommand explicitly to run the proxy.
+
+### Usage Examples
 
 ```bash
-# Development (default: localhost:3000 -> http://localhost:1234)
-cargo run
+# Run proxy server (default: localhost:3000 -> http://localhost:1234)
+cargo run -- serve
 
-# Or run the release binary directly (runs proxy by default)
-./target/release/copilot-lmstudio-config
+# Or run the release binary
+./target/release/copilot-lmstudio-config serve
 
-# Explicitly run proxy server with custom configuration
+# Proxy server with custom configuration
 ./target/release/copilot-lmstudio-config serve --port 8080 --lmstudio-url http://studio.local:1234
 
 # Bind to all interfaces (accessible from network)
@@ -146,14 +155,14 @@ cargo run
 
 ## Logging
 
-Use `RUST_LOG` to control verbosity:
+Use `RUST_LOG` to control verbosity when running the proxy:
 
 ```bash
 # More verbose
-RUST_LOG=debug cargo run
+RUST_LOG=debug cargo run -- serve
 
 # Less verbose
-RUST_LOG=warn cargo run
+RUST_LOG=warn cargo run -- serve
 ```
 
 ---
@@ -161,14 +170,22 @@ RUST_LOG=warn cargo run
 ## Development
 
 - Rust code: `src/main.rs`
-- Python helper: `scripts/lm-studio-copilot-config.py`
+- Python package: `copilot_lmstudio_config/cli.py`
 
 Useful commands:
 
 ```bash
+# Run tests
 cargo test
-cargo run -- generate-config --help
-uv run scripts/lm-studio-copilot-config.py --help
+
+# Generate config (Rust)
+cargo run -- --help
+
+# Generate config (Python)
+uv run copilot-lmstudio-config --help
+
+# Run proxy server
+cargo run -- serve
 ```
 
 ---

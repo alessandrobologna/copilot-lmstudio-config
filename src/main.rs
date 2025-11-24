@@ -25,11 +25,15 @@ static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
+
+    /// Flattened generate-config args for when no subcommand is provided
+    #[command(flatten)]
+    generate_args: GenerateConfigArgs,
 }
 
 #[derive(clap::Subcommand, Debug)]
 enum Command {
-    /// Run the proxy server (default)
+    /// Run the proxy server
     Serve(ServeConfig),
     /// Generate VS Code configuration from LM Studio models
     GenerateConfig(GenerateConfigArgs),
@@ -60,7 +64,7 @@ enum VsCodeEditor {
     CodeInsiders,
 }
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 struct GenerateConfigArgs {
     /// Base URL to write in VS Code config (where Copilot will connect)
     #[arg(long, default_value = "http://localhost:3000/v1")]
@@ -92,8 +96,11 @@ async fn main() {
             }
         }
         None => {
-            // Default to serve if no subcommand provided
-            serve(ServeConfig::parse()).await
+            // Default to generate-config if no subcommand provided
+            if let Err(e) = generate_config(cli.generate_args).await {
+                eprintln!("Error: {}", e);
+                std::process::exit(1);
+            }
         }
     }
 }
