@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "copilot-lmstudio-config"
+version = "0.1.0"
+description = "VS Code custom model configuration generator for LM Studio, plus an optional compatibility proxy."
+requires-python = ">=3.10"
+dependencies = [
+  "requests",
+  "click",
+  "json5",
+]
+
+[project.scripts]
+copilot-lmstudio-config = "copilot_lmstudio_config.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["copilot_lmstudio_config"]

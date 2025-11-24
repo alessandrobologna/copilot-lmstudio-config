@@ -6,63 +6,20 @@ Generate GitHub Copilot "Custom OpenAI models" configuration for LM Studio, plus
 
 ## Quick Start (VS Code)
 
-Most people just want Copilot to talk to LM Studio.
+Most users simply want Copilot to communicate with LM Studio, but Copilot lacks a built‑in way to enumerate the available models and requires manual configuration for each one.
+Both the python package and rust package allow you to query the `v0` LM Studio API and to update the VS Code configuration, adding an entry `github.copilot.chat.customOAIModels {}` to it.
 
-1. Build the binary:
-   ```bash
-   cargo build --release
-   ```
-2. Generate VS Code config and update `settings.json`:
-   ```bash
-   ./target/release/copilot-lmstudio-config generate-config --settings code-insiders
-   ```
-3. Review the diff, type `y` to apply, then restart VS Code.
-4. In Copilot Chat, pick one of your LM Studio models from the model selector.
+With the rust packge, clone the repo, then build the binary:
+  ```bash
+  cargo run -- generate-config --help
+  ```
 
-Python alternative:
+With the python package, you can use `uvx` with no install:
 ```bash
-uv run scripts/lm-studio-copilot-config.py --settings code-insiders
+uvx git+https://github.com/alessandrobologna/copilot-lmstudio-config --help
 ```
 
 ---
-
-## VS Code Configuration (Main Feature)
-
-This project’s primary job is to generate the `github.copilot.chat.customOAIModels` block so Copilot can talk to LM Studio.
-
-### Using the Rust CLI (recommended)
-
-The proxy binary includes a `generate-config` subcommand.
-
-**Print configuration to stdout**:
-```bash
-./copilot-lmstudio-config generate-config
-```
-
-**Auto-detect VS Code settings** (recommended):
-```bash
-# For VS Code
-./copilot-lmstudio-config generate-config --settings code
-
-# For VS Code Insiders
-./copilot-lmstudio-config generate-config --settings code-insiders
-```
-
-**Update VS Code settings with custom path** (macOS):
-```bash
-./copilot-lmstudio-config generate-config \
-  --settings-path "~/Library/Application Support/Code/User/settings.json"
-```
-
-**Remote deployment** (proxy and LM Studio on remote host):
-```bash
-# Run this on your laptop, pointing to remote server
-./copilot-lmstudio-config generate-config \
-  --base-url http://gpu-server.local:3000/v1 \
-  --lmstudio-url http://gpu-server.local:1234 \
-  --settings-path "~/Library/Application Support/Code/User/settings.json"
-```
-
 **Options**:
 
 ```text
@@ -79,60 +36,6 @@ The proxy binary includes a `generate-config` subcommand.
 - Prompts for confirmation (`y/N`)
 - Creates dated backups (`settings.YYMMDD-N.backup.json`) before modifying
 - Supports JSONC format (comments, trailing commas) via `json5`
-
-### Using the Python Script
-
-The `scripts/lm-studio-copilot-config.py` script provides the same functionality for users who prefer Python, with the same options and behavior as the built-in `generate-config` subcommand.
-
-#### Installation
-
-The script uses PEP 723 inline dependencies and works best with `uv`:
-
-```bash
-# Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Run the script (dependencies auto-installed)
-uv run scripts/lm-studio-copilot-config.py --help
-```
-
-Alternatively, install dependencies manually:
-
-```bash
-pip install requests click json5
-python scripts/lm-studio-copilot-config.py --help
-```
-
-#### Usage
-
-**Print configuration to stdout** (copy/paste into VS Code settings):
-```bash
-uv run scripts/lm-studio-copilot-config.py
-```
-
-**Auto-detect VS Code settings** (recommended):
-```bash
-# For VS Code
-uv run scripts/lm-studio-copilot-config.py --settings code
-
-# For VS Code Insiders
-uv run scripts/lm-studio-copilot-config.py --settings code-insiders
-```
-
-**Update VS Code settings with custom path**:
-```bash
-uv run scripts/lm-studio-copilot-config.py --settings-path "~/Library/Application Support/Code/User/settings.json"
-```
-
-**Remote deployment / custom LM Studio URL** (same semantics as the Rust command):
-```bash
-uv run scripts/lm-studio-copilot-config.py \
-  --base-url http://gpu-server.local:3000/v1 \
-  --lmstudio-url http://gpu-server.local:1234 \
-  --settings-path "~/Library/Application Support/Code/User/settings.json"
-```
-
-The Python tool produces the same JSON structure and ordering as the Rust CLI, so you can freely switch between them.
 
 ### What Gets Written
 
@@ -271,4 +174,4 @@ uv run scripts/lm-studio-copilot-config.py --help
 
 ## License
 
-MIT (see `LICENSE` if present).
+MIT
